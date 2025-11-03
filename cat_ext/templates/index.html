@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>猫影视/TVBoxOSC AES-128-CBC 加密解密</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            display: flex;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .textarea-group {
+            flex: 3;
+        }
+
+        .input-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 400px;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ff9800 0%, #e68900 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f44336 0%, #da190b 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        .checkbox input {
+            margin: 0;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .json-preview {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .json-preview pre {
+            margin: 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #333;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>猫影视/TVBoxOSC AES-128-CBC 加密解密</h1>
+            <p>支持文件上传、加密下载、Base64解码等功能</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="textarea-group">
+                <div class="form-group">
+                    <label for="input-text">输入内容</label>
+                    <textarea id="input-text" placeholder="请输入要加密或解密的内容..."></textarea>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <div class="form-group">
+                    <label>操作模式</label>
+                    <select id="mode" class="input">
+                        <option value="encrypt">加密</option>
+                        <option value="decrypt">解密</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="key">密钥 (Key)</label>
+                    <input type="text" id="key" value="123456" placeholder="请输入16位以内的密钥">
+                </div>
+                
+                <div class="form-group">
+                    <label for="iv">向量 (IV)</label>
+                    <input type="text" id="iv" readonly placeholder="自动生成的时间戳">
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="encryptText()">加密</button>
+                    <button class="btn btn-success" onclick="decryptText()">解密</button>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-warning" onclick="uploadFile()">上传文件</button>
+                    <button class="btn btn-info" onclick="downloadResult()">下载结果</button>
+                </div>
+                
+                <div class="checkbox">
+                    <input type="checkbox" id="base64-check">
+                    <label for="base64-check">Base64解码</label>
+                </div>
+                
+                <div id="status" class="status info" style="display: none;"></div>
+            </div>
+            
+            <div class="textarea-group">
+                <div class="form-group">
+                    <label for="output-text">输出内容</label>
+                    <textarea id="output-text" readonly placeholder="结果将显示在这里..."></textarea>
+                </div>
+                
+                <div id="json-preview" class="json-preview" style="display: none;">
+                    <strong>格式化JSON预览:</strong>
+                    <pre id="json-content"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 更新IV为当前时间戳
+        document.getElementById('iv').value = Date.now().toString();
+        
+        // 监听模式切换
+        document.getElementById('mode').addEventListener('change', function() {
+            const mode = this.value;
+            const keyInput = document.getElementById('key');
+            const ivInput = document.getElementById('iv');
+            const encryptBtn = document.querySelector('[onclick="encryptText()"]');
+            const decryptBtn = document.querySelector('[onclick="decryptText()"]');
+            
+            if (mode === 'encrypt') {
+                keyInput.disabled = false;
+                ivInput.disabled = true;
+                encryptBtn.style.display = 'block';
+                decryptBtn.style.display = 'block';
+            } else {
+                keyInput.disabled = true;
+                ivInput.disabled = true;
+                encryptBtn.style.display = 'block';
+                decryptBtn.style.display = 'block';
+            }
+        });
+        
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            
+            // 3秒后自动隐藏
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 3000);
+        }
+        
+        async function encryptText() {
+            const inputText = document.getElementById('input-text').value.trim();
+            const key = document.getElementById('key').value.trim();
+            
+            if (!inputText) {
+                showStatus('请输入要加密的内容', 'error');
+                return;
+            }
+            
+            if (!key) {
+                showStatus('请输入密钥', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/encrypt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: inputText,
+                        key: key
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.error) {
+                    showStatus(result.error, 'error');
+                } else {
+                    document.getElementById('output-text').value = result.result;
+                    showStatus('加密成功！', 'success');
+                    document.getElementById('json-preview').style.display = 'none';
+                }
+            } catch (error) {
+                showStatus('加密失败: ' + error.message, 'error');
+            }
+        }
+        
+        async function decryptText() {
+            const inputText = document.getElementById('input-text').value.trim();
+            const isBase64 = document.getElementById('base64-check').checked;
+            
+            if (!inputText) {
+                showStatus('请输入要解密的内容', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/decrypt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: inputText,
+                        is_base64: isBase64
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.error) {
+                    showStatus(result.error, 'error');
+                } else {
+                    document.getElementById('output-text').value = result.result;
+                    
+                    if (result.is_json) {
+                        document.getElementById('json-content').textContent = result.formatted;
+                        document.getElementById('json-preview').style.display = 'block';
+                        showStatus('解密成功！检测到JSON格式，已自动格式化。', 'success');
+                    } else {
+                        document.getElementById('json-preview').style.display = 'none';
+                        showStatus('解密成功！', 'success');
+                    }
+                }
+            } catch (error) {
+                showStatus('解密失败: ' + error.message, 'error');
+            }
+        }
+        
+        async function uploadFile() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json,.txt';
+            
+            input.onchange = async function(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                try {
+                    const response = await fetch('/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.error) {
+                        showStatus(result.error, 'error');
+                    } else {
+                        document.getElementById('input-text').value = result.content;
+                        showStatus(`文件 "${result.filename}" 上传成功！`, 'success');
+                    }
+                } catch (error) {
+                    showStatus('上传失败: ' + error.message, 'error');
+                }
+            };
+            
+            input.click();
+        }
+        
+        async function downloadResult() {
+            const outputText = document.getElementById('output-text').value.trim();
+            
+            if (!outputText) {
+                showStatus('没有内容可下载', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        content: outputText,
+                        filename: 'result.txt'
+                    })
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'result.txt';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    showStatus('下载成功！', 'success');
+                } else {
+                    const result = await response.json();
+                    showStatus(result.error || '下载失败', 'error');
+                }
+            } catch (error) {
+                showStatus('下载失败: ' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
